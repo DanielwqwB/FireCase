@@ -1,5 +1,5 @@
 import type {WildfireCase,Area} from './types';
-export type Resource={id:string;name:string;kind:'water'|'road'|'station'|'school'|'shelter';latitude:number;longitude:number;distanceKm:number};
+export type Resource={id:string;name:string;kind:'water'|'road'|'station'|'school'|'shelter'|'home';latitude:number;longitude:number;distanceKm:number};
 export type RecoveryMeasurement={recovery_id:string;case_id:string;observation_date:string;vegetation_index:number|null;burned_area_hectares:number|null;burn_severity:string|null;recovery_status:string;source:string};
 export type MapTools={hotspots:boolean;cases:boolean;boundaries:boolean;satellite:boolean;resourceKinds:string[];resources:Resource[];mode:'browse'|'point'|'polygon'|'rectangle';draft:[number,number][];focus?:[number,number];onPoint:(point:[number,number])=>void};
 export function distanceKm(a:number,b:number,c:number,d:number){const rad=Math.PI/180;const h=Math.sin((c-a)*rad/2)**2+Math.cos(a*rad)*Math.cos(c*rad)*Math.sin((d-b)*rad/2)**2;return 6371*2*Math.asin(Math.sqrt(Math.min(1,h)))}

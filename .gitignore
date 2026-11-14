@@ -13,3 +13,6 @@ tsconfig.tsbuildinfo
 
 .local-data/
 __pycache__/
+
+# Local browser review screenshots.
+artifacts/

@@ -17,12 +17,12 @@ function isInBicol(latitude:number,longitude:number){
  return Number.isFinite(latitude)&&Number.isFinite(longitude)&&latitude>=BICOL_BOUNDS.south&&latitude<=BICOL_BOUNDS.north&&longitude>=BICOL_BOUNDS.west&&longitude<=BICOL_BOUNDS.east;
 }
 
-export default function LeafletMap({cases,onPick,hotspots=[],boundaries=[],tools,overlay}:{tools?:MapTools;overlay?:GeoJsonObject;cases:WildfireCase[];onPick?:(c:WildfireCase)=>void;hotspots?:ResearchHotspot[];boundaries?:unknown[]}){
+export default function LeafletMap({cases,onPick,hotspots=[],boundaries=[],tools,overlay,overlayColor='#ef5418'}:{overlayColor?:string;tools?:MapTools;overlay?:GeoJsonObject;cases:WildfireCase[];onPick?:(c:WildfireCase)=>void;hotspots?:ResearchHotspot[];boundaries?:unknown[]}){
  const [tileError,setTileError]=useState(false);
  return <div className="leaflet-wrap">
   <MapContainer center={BICOL_CENTER} zoom={8} scrollWheelZoom={false} zoomControl={false} className="leaflet-map">
    <MapViewport cases={cases} hotspots={hotspots} boundaries={boundaries} focus={tools?.focus}/>{tools&&<DrawEvents tools={tools}/>}
-   {overlay&&<GeoJSON key={JSON.stringify(overlay)} data={overlay} style={{color:"#ef5418",fillColor:"#ff8d23",fillOpacity:.25,weight:2}}/>}
+   {overlay&&<GeoJSON key={JSON.stringify(overlay)} data={overlay} style={{color:overlayColor,fillColor:overlayColor,fillOpacity:.25,weight:2}}/>}
    {tools&&tools.draft.length>0&&<Polyline positions={tools.draft} pathOptions={{color:"#ff710f",dashArray:"5 5"}}/>}
    {tools?.resources.filter(r=>tools.resourceKinds.includes(r.kind)).map(r=><CircleMarker key={r.id} center={[r.latitude,r.longitude]} radius={7} pathOptions={{color:"#fff",weight:2,fillColor:r.kind==="water"?"#208ac5":r.kind==="station"?"#b34724":"#719848",fillOpacity:1}}><Popup><b>{r.name}</b><br/>{r.kind} ? {r.distanceKm.toFixed(1)} km straight-line</Popup></CircleMarker>)}
    {(!tools||tools.boundaries)&&boundaries.map(boundary=><GeoJSON key={JSON.stringify(boundary)} data={boundary as GeoJsonObject} style={{color:'#d77a33',weight:2,fillOpacity:.08}}/>)}
