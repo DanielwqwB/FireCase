@@ -1,0 +1,21 @@
+'use client';
+import {Flame,MapPin,Clock3,ArrowUpRight,ChevronRight,Map,Activity,Users,ShieldCheck,AlertTriangle,Leaf,Gauge,ClipboardList,Search,RefreshCw,Satellite,Settings2,Eye,Layers3,FileText} from 'lucide-react';
+import {ResponsiveContainer,AreaChart,Area as RArea,XAxis,YAxis,Tooltip,CartesianGrid} from 'recharts';
+import dynamic from 'next/dynamic';
+const LeafletMap=dynamic(()=>import('./LeafletMap'),{ssr:false,loading:()=> <div className="map-loading">Loading map…</div>});
+import type {Role,WildfireCase,User} from '@/lib/types';
+export const nav:Record<Role,{group:string;items:{id:string;label:string;icon:any}[]}>= {
+'Admin':{group:'Administration',items:[['overview','Overview',Gauge],['cases','Case summaries',Flame],['users','User management',Users],['areas','Monitoring areas',Map],['system','System activity',Settings2]].map(([id,label,icon]:any)=>({id,label,icon}))},
+'Emergency Responder':{group:'Operations',items:[['overview','Overview',Gauge],['cases','Case queue',Flame],['map','Fire monitoring map',Map],['warnings','Warnings',AlertTriangle]].map(([id,label,icon]:any)=>({id,label,icon}))},
+'Firefighter':{group:'Field operations',items:[['overview','Overview',Gauge],['cases','Active cases',Flame],['reports','Field reports',ClipboardList]].map(([id,label,icon]:any)=>({id,label,icon}))},
+'Land Manager':{group:'Land & recovery',items:[['overview','Overview',Gauge],['areas','My areas',Map],['calendar','Burning calendar',Layers3],['recovery','Recovery monitoring',Leaf]].map(([id,label,icon]:any)=>({id,label,icon}))}};
+export type ActivityPoint={month:string;count:number};
+export function Badge({children,tone}:{children:any;tone?:string}){return <span className={'badge '+(tone||String(children).toLowerCase().replaceAll(' ','-'))}><i/>{children}</span>}
+export function Card({children,className=''}:{children:any;className?:string}){return <section className={'card '+className}>{children}</section>}
+export function Heading({eyebrow,title,sub,action}:{eyebrow:string;title:string;sub:string;action?:any}){return <div className="page-title"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1><p>{sub}</p></div>{action}</div>}
+export function Metric({label,value,change,icon:Icon,tone='orange'}:{label:string;value:string;change:string;icon:any;tone?:string}){return <Card className="metric"><div className="metric-top"><span>{label}</span><i className={'metric-icon '+tone}><Icon size={18}/></i></div><strong>{value}</strong><div className="metric-foot"><b><ArrowUpRight size={14}/>{change}</b><span>Supabase records</span></div></Card>}
+export function MapView({cases,onPick}:{cases:WildfireCase[];onPick?:(c:WildfireCase)=>void}){return <LeafletMap cases={cases} onPick={onPick}/>}
+export function Chart({data=[]}:{data?:ActivityPoint[]}){if(!data.length)return <div className="chart"><div className="chart-empty"><Activity size={22}/><b>No satellite observations available</b><span>Activity charts will populate when validated observations are ingested.</span></div></div>;return <div className="chart"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data}><defs><linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f97316" stopOpacity={.2}/><stop offset="95%" stopColor="#f97316" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" vertical={false}/><XAxis dataKey="month" axisLine={false} tickLine={false}/><YAxis allowDecimals={false} axisLine={false} tickLine={false}/><Tooltip/><RArea dataKey="count" name="Stored detections" stroke="#f97316" strokeWidth={2.5} fill="url(#activityFill)"/></AreaChart></ResponsiveContainer></div>}
+export function Person({user}:{user:User}){return <div className="person"><i>{user.name.split(' ').map(n=>n[0]).join('')}</i><div><b>{user.name}</b><small>{user.email}</small></div></div>}
+export function CaseRow({item,onClick}:{item:WildfireCase;onClick:()=>void}){return <button className="case-row" onClick={onClick}><i className="case-symbol"><Flame size={16}/></i><div><b>{item.id}</b><span>{item.location} · {item.detected}</span></div><Badge>{item.status}</Badge></button>}
+export const IconSet={Clock3,ChevronRight,MapPin,Activity,Users,ShieldCheck,AlertTriangle,Leaf,ClipboardList,Search,RefreshCw,Satellite,Settings2,Eye,Layers3,FileText};

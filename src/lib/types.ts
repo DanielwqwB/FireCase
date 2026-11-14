@@ -1,0 +1,13 @@
+export type Role='Admin'|'Emergency Responder'|'Firefighter'|'Land Manager';
+export type Life='Watch'|'Active'|'Recovery'|'Closed';
+export type Incident='Confirmed'|'Contained'|'Out'|'Not recorded';
+export type Verification='Unverified'|'Requested'|'Confirmed'|'Dismissed';
+export type User={id:string;name:string;email:string;role:Role;active:boolean};
+export type Area={id:string;name:string;region:string;manager:string;hectares:number;coordinates:string;boundary?:unknown;isActive?:boolean;managerId?:string};
+export type WildfireCase={id:string;caseId:string;location:string;area:string;detected:string;status:Life;verification:Verification;incident:Incident;risk:'High'|'Elevated'|'Moderate'|'Unscored';priorityScore:number|null;intensity:number|null;latitude:number;longitude:number;source:string};
+export type FieldReport={id:string;caseId:string;result:string;incident:Incident;remarks:string;photo?:string;submittedAt:string};
+export type VerificationRequest={id:string;caseId:string;note:string;createdAt:string};
+export type Warning={id:string;caseId:string;title:string;message:string;status:'Draft'|'Reviewed';createdAt:string};
+export type RecoveryRecord={area:string;caseId:string;status:string;observations:string[]};
+export type AuditLog={action:string;actor:string;time:string};
+export const roles:Role[]=['Admin','Emergency Responder','Firefighter','Land Manager'];

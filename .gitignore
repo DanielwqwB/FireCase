@@ -1,0 +1,8 @@
+node_modules
+.next/
+node_modules/
+tsconfig.tsbuildinfo
+.env*
+
+!.env.example
+.next-production/
