@@ -31,8 +31,8 @@ export default function LeafletMap({cases,onPick,hotspots=[],boundaries=[],tools
    {(!tools||tools.cases)&&cases.map(c=><CircleMarker key={c.id} center={[c.latitude,c.longitude]} radius={9} pathOptions={{color:'#fff',weight:3,fillColor:c.status==='Recovery'?'#22a06b':c.status==='Watch'?'#e8a324':'#f97316',fillOpacity:1}} eventHandlers={{click:()=>onPick?.(c)}}><Popup><b>{c.id}</b><br/>{c.location}<br/>{c.status} · {c.verification}</Popup></CircleMarker>)}
    {(!tools||tools.hotspots)&&hotspots.map(point=><CircleMarker key={point.id} center={[point.latitude,point.longitude]} radius={4} pathOptions={{color:'#b54d13',weight:1,fillColor:'#ef883d',fillOpacity:.7}}><Popup><b>Historical {point.sensor} hotspot</b><br/>{new Date(point.observedAt).toLocaleString('en-PH',{timeZone:'Asia/Manila'})}<br/>{point.satellite} / FRP {point.frp??'not supplied'} MW<br/>Satellite observation; field confirmation not recorded.</Popup></CircleMarker>)}
   </MapContainer>
-  {!mapboxToken&&<div className="mapbox-setup"><strong>Mapbox token required</strong><span>Add <code>NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN</code> to <code>.env.local</code>, then restart the app.</span></div>}
-  {mapboxToken&&tileError&&<div className="mapbox-setup"><strong>Mapbox tiles could not load</strong><span>Check that the public token is valid, has Styles:Read access, and is allowed for this app’s URL.</span></div>}
+  {!mapboxToken&&<div className="mapbox-setup"><strong>Map service is not configured</strong><span>Ask an administrator to enable maps. Case coordinates remain available in the incident details.</span></div>}
+  {mapboxToken&&tileError&&<div className="mapbox-setup"><strong>Map tiles are unavailable</strong><span>Check your connection. Incident coordinates and case details are still available.</span></div>}
   <div className="leaflet-caption">Stored records</div>
  </div>
 }
