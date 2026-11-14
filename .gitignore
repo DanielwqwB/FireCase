@@ -10,3 +10,6 @@ tsconfig.tsbuildinfo
 .next-firecase-check/
 .next-dev/
 .next-dev-*/
+
+.local-data/
+__pycache__/

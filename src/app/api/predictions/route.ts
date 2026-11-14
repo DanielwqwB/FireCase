@@ -1,25 +1,10 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/supabase/auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import {predictionRequestSchema} from '@/lib/prediction-dataset';
 
-const dailySchema = z.object({
-  observation_date: z.string().date(),
-  CLDTMP: z.number(), PS: z.number(), T2M: z.number(), TO3: z.number(),
-  TQV: z.number(), TS: z.number(), U10M: z.number(), U50M: z.number(),
-  V10M: z.number(), V50M: z.number(), hotspots_today: z.number().int().nonnegative(),
-  hotspots_prev7_mean: z.number().nonnegative(),
-}).strict();
-const dailyEnvelope = z.object({ model: z.literal('daily'), observation: dailySchema }).strict();
-const lstmObservation = z.object({
-  observation_date: z.string().date(),
-  CLDTMP: z.number(), PS: z.number(), T2M: z.number(), TO3: z.number(),
-  TQV: z.number(), TS: z.number(), U10M: z.number(), U50M: z.number(),
-  V10M: z.number(), V50M: z.number(), total_hotspots: z.number().int().nonnegative(),
-}).strict();
-const lstmEnvelope = z.object({ model: z.literal('lstm'), observations: z.array(lstmObservation).length(14) }).strict();
-const requestSchema = z.discriminatedUnion('model', [dailyEnvelope, lstmEnvelope]);
 const resultSchema = z.object({
   observation_date: z.string().date(), prediction_date: z.string().date(),
   predicted_class: z.number().int(), high_activity: z.boolean(),
@@ -41,15 +26,16 @@ export async function POST(request: NextRequest) {
   const { user, error } = await getCurrentUser();
   if (!user) return NextResponse.json({ error: error || 'Authentication required.' }, { status: 401 });
   if (!['admin', 'emergency_responder'].includes(user.role)) return NextResponse.json({ error: 'Prediction access is restricted to Admin and Emergency Responder accounts.' }, { status: 403 });
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: 'Prediction input does not match the documented model schema. LSTM requires exactly 14 daily observations.' }, { status: 400 });
+  const parsed = predictionRequestSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues.map(issue=>`${issue.path.join('.')}: ${issue.message}`).join('; ') }, { status: 400 });
 
   const input = parsed.data;
   const modelName = input.model;
-  const observationData = modelName === 'daily' ? input.observation : { observations: input.observations };
+  const observationData = {...(modelName === 'daily' ? input.observation : { observations: input.observations }), ...(input.context?{context:input.context}:{})};
   const endpoint = modelName === 'daily' ? '/predict' : '/predict/lstm';
   const baseUrl = (process.env.FIRECASE_PREDICTION_API_URL || 'https://firecase.onrender.com').replace(/\/$/, '');
-  const admin = createAdminClient();
+  let admin:ReturnType<typeof createAdminClient>;
+  try{admin=createAdminClient()}catch{return NextResponse.json({error:'Prediction saving is not configured. Ask the administrator to set SUPABASE_SECRET_KEY on the server.'},{status:503})}
 
   const { data: record, error: insertError } = await admin.from('fire_predictions').insert({
     submitted_by: user.id, model_name: modelName, observation_data: observationData,

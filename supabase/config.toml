@@ -25,7 +25,7 @@ port = 54323
 enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/**"]
-enable_signup = false
+enable_signup = true
 
 [storage]
 enabled = true

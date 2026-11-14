@@ -10,6 +10,13 @@ export async function signIn(email:string,password:string){
  if(!response.ok){await supabase.auth.signOut();throw new Error(body.error||'This account is not active. Contact an administrator.');}
  return {id:body.user.id as string,email:body.user.email as string,fullName:body.user.fullName as string,role:uiRole(body.user.role as AppRole)};
 }
+export async function signUp(fullName:string,email:string,password:string,role:import('./types').Role){
+ const dbRole=({Admin:'admin','Emergency Responder':'emergency_responder',Firefighter:'firefighter','Land Manager':'land_manager'} as const)[role];
+ const supabase=createClient();
+ const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:fullName,requested_role:dbRole},emailRedirectTo:`${window.location.origin}/auth/confirm`}});
+ if(error)throw new Error(error.message);
+ await supabase.auth.signOut();
+}
 export async function signOut(){const supabase=createClient();const {error}=await supabase.auth.signOut();if(error)throw error;}
 export async function currentProfile(){const response=await fetch('/api/auth/me',{cache:'no-store'});if(!response.ok)return null;return response.json() as Promise<{user:{id:string;email:string;fullName:string;role:AppRole}}>}
 export async function apiRequest<T>(path:string,init?:RequestInit):Promise<T>{const response=await fetch(path,{...init,headers:{...(init?.body instanceof FormData?{}:{'Content-Type':'application/json'}),...init?.headers},cache:'no-store'});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||`Request failed (${response.status})`);return data as T}
