@@ -5,10 +5,12 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 MODEL_PATH = Path(__file__).resolve().parents[1] / "models" / "FireCase_RandomForest_PCA.joblib"
+LSTM_PATH = MODEL_PATH.parent / "FireCase_LSTM.keras"
+LSTM_PREPROCESSING_PATH = MODEL_PATH.parent / "FireCase_LSTM_Preprocessing.joblib"
 
 
 @asynccontextmanager
@@ -16,14 +18,23 @@ async def lifespan(app: FastAPI):
     if not MODEL_PATH.is_file():
         raise RuntimeError("Model missing. Run python Scripts/04_train_model.py first.")
     app.state.bundle = joblib.load(MODEL_PATH)
+    app.state.lstm_model = None
+    app.state.lstm_preprocessing = None
+    if LSTM_PATH.is_file() and LSTM_PREPROCESSING_PATH.is_file():
+        from tensorflow.keras.models import load_model
+
+        app.state.lstm_preprocessing = joblib.load(LSTM_PREPROCESSING_PATH)
+        app.state.lstm_model = load_model(LSTM_PATH, compile=False)
     yield
     del app.state.bundle
+    del app.state.lstm_model
+    del app.state.lstm_preprocessing
 
 
-app = FastAPI(title="FireCase API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="FireCase API", version="1.1.0", lifespan=lifespan)
 
 
-class PredictionInput(BaseModel):
+class WeatherInput(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     observation_date: date
@@ -37,9 +48,24 @@ class PredictionInput(BaseModel):
     U50M: float
     V10M: float
     V50M: float
+
+
+class PredictionInput(WeatherInput):
     hotspots_today: int = Field(ge=0, strict=True)
     hotspots_prev7_mean: float = Field(
         ge=0, description="Mean daily hotspots for the seven days before observation_date, excluding today."
+    )
+
+
+class LSTMDailyInput(WeatherInput):
+    total_hotspots: int = Field(ge=0, strict=True)
+
+
+class LSTMPredictionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    observations: list[LSTMDailyInput] = Field(
+        min_length=1, max_length=366,
+        description="Consecutive daily observations, oldest first. Length must match the saved model (currently 14).",
     )
 
 
@@ -59,7 +85,11 @@ def root():
 
 @app.get("/health")
 def health(request: Request):
-    return {"status": "ok", "model_loaded": hasattr(request.app.state, "bundle")}
+    return {
+        "status": "ok",
+        "model_loaded": hasattr(request.app.state, "bundle"),
+        "lstm_model_loaded": request.app.state.lstm_model is not None,
+    }
 
 
 @app.post("/predict", response_model=PredictionOutput)
@@ -84,4 +114,35 @@ def predict(payload: PredictionInput, request: Request):
         high_activity=bool(predicted),
         high_activity_probability=probability,
         high_activity_hotspot_threshold=float(bundle["threshold"]),
+    )
+
+
+@app.post("/predict/lstm", response_model=PredictionOutput)
+def predict_lstm(payload: LSTMPredictionInput, request: Request):
+    model = request.app.state.lstm_model
+    preprocessing = request.app.state.lstm_preprocessing
+    if model is None or preprocessing is None:
+        raise HTTPException(503, "LSTM artifacts missing. Run python Scripts/05_train_lstm.py and restart the API.")
+    observations = payload.observations
+    length = int(preprocessing["sequence_length"])
+    if len(observations) != length:
+        raise HTTPException(422, f"Expected exactly {length} daily observations, oldest first.")
+    if any(current.observation_date - previous.observation_date != timedelta(days=1)
+           for previous, current in zip(observations, observations[1:])):
+        raise HTTPException(422, "Observation dates must be consecutive days in ascending order, without duplicates.")
+    frame = pd.DataFrame(
+        [observation.model_dump() for observation in observations],
+        columns=preprocessing["features"],
+    )
+    scaled = preprocessing["scaler"].transform(frame).astype(np.float32)
+    probability = float(np.asarray(model(scaled[np.newaxis, ...], training=False)).ravel()[0])
+    predicted = int(probability >= 0.5)
+    observation_date = observations[-1].observation_date
+    return PredictionOutput(
+        observation_date=observation_date,
+        prediction_date=observation_date + timedelta(days=1),
+        predicted_class=predicted,
+        high_activity=bool(predicted),
+        high_activity_probability=probability,
+        high_activity_hotspot_threshold=float(preprocessing["threshold"]),
     )
