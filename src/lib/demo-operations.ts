@@ -1,0 +1,10 @@
+// Illustrative geometry and scripted scenarios only. These are not trained models.
+export type DemoScenario='mild'|'windy'|'dry';
+const presets={mild:{rate:.08,bearing:45,status:'go' as const,label:'Mild scenario'},windy:{rate:.22,bearing:90,status:'caution' as const,label:'Windy scenario'},dry:{rate:.35,bearing:135,status:'no-go' as const,label:'Hot and dry scenario'}};
+function destination(latitude:number,longitude:number,km:number,bearing:number){const r=Math.PI/180,lat=latitude*r,lon=longitude*r,a=km/6371,b=bearing*r;const nextLat=Math.asin(Math.sin(lat)*Math.cos(a)+Math.cos(lat)*Math.sin(a)*Math.cos(b));const nextLon=lon+Math.atan2(Math.sin(b)*Math.sin(a)*Math.cos(lat),Math.cos(a)-Math.sin(lat)*Math.sin(nextLat));return [((nextLon/r+540)%360)-180,nextLat/r]}
+export function demoOperation(kind:'spread'|'burn',latitude:number,longitude:number,hours:6|12|24,scenario:DemoScenario,now=new Date()){
+ const preset=presets[scenario],issuedAt=now.toISOString(),validAt=new Date(now.getTime()+hours*3600000).toISOString();
+ if(kind==='burn')return {demo:true,scenario,source:'Scripted classroom scenario',authority:'DEMO — no authority approval',issuedAt,validUntil:validAt,status:preset.status,reason:`${preset.label}: illustrative ${preset.status.toUpperCase()} result selected by the scenario. This is not a weather assessment or permission to burn.`};
+ const radius=hours*preset.rate;const coordinates=Array.from({length:48},(_,i)=>{const angle=i*2*Math.PI/48;const east=radius*(Math.cos(angle)*1.4+0.4),north=radius*Math.sin(angle)*.7;const direction=Math.atan2(east,north)*180/Math.PI+preset.bearing;return destination(latitude,longitude,Math.hypot(east,north),direction)});coordinates.push([...coordinates[0]]);
+ return {demo:true,scenario,model:'DEMO — illustrative spread simulation',issuedAt,validAt,hours,geometry:{type:'Polygon',coordinates:[coordinates]},confidence:null,notes:`${preset.label}; assumed growth ${preset.rate} km/h for ${hours} hours. Synthetic perimeter, not an AI forecast. No terrain, fuel or live weather inputs are used.`};
+}

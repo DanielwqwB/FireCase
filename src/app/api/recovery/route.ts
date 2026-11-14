@@ -1,4 +1,14 @@
-﻿import {NextResponse} from 'next/server';
+import {z} from 'zod';
+import {createAdminClient} from '@/lib/supabase/admin';
+import {NextRequest,NextResponse} from 'next/server';
 import {getCurrentUser} from '@/lib/supabase/auth';
 import {createClient} from '@/lib/supabase/server';
 export async function GET(){const {user,error}=await getCurrentUser();if(!user)return NextResponse.json({error:error||'Authentication required.'},{status:401});if(!['admin','emergency_responder','land_manager'].includes(user.role))return NextResponse.json({error:'Access denied.'},{status:403});const db=await createClient();const [{data:recovery,error:recoveryError},{data:observations,error:observationsError}]=await Promise.all([db.from('recovery_records').select('*').order('observation_date',{ascending:false}),db.from('satellite_detections').select('detection_id,detection_time,source,fire_radiative_power,confidence').order('detection_time',{ascending:false}).limit(1000)]);if(recoveryError||observationsError)return NextResponse.json({error:recoveryError?.message||observationsError?.message},{status:500});return NextResponse.json({recovery,observations})}
+
+const measurement=z.object({caseId:z.string().uuid(),date:z.string().date().refine(d=>d<=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),'Observation date cannot be in the future'),vegetationIndex:z.number().min(-1).max(1).nullable(),burnedArea:z.number().min(0).max(1e9).nullable(),severity:z.enum(['low','moderate','high','unknown']),status:z.enum(['monitoring','improving','stable','degraded','unknown']),source:z.string().trim().min(3).max(500)}).refine(d=>d.vegetationIndex!==null||d.burnedArea!==null,'Supply a vegetation index or burned area measurement.');
+export async function POST(request:NextRequest){
+ const {user}=await getCurrentUser();if(!user)return NextResponse.json({error:'Authentication required.'},{status:401});if(!['admin','land_manager'].includes(user.role))return NextResponse.json({error:'Admin or Land Manager access required.'},{status:403});
+ const parsed=measurement.safeParse(await request.json().catch(()=>null));if(!parsed.success)return NextResponse.json({error:parsed.error.issues.map(i=>i.message).join(' ')},{status:400});const q=parsed.data;
+ const db=await createClient();const {data:incident,error:caseError}=await db.from('wildfire_cases').select('case_id').eq('case_id',q.caseId).single();if(caseError||!incident)return NextResponse.json({error:'This case is not accessible.'},{status:403});
+ try{const admin=createAdminClient();const {data,error}=await admin.from('recovery_records').insert({case_id:q.caseId,observation_date:q.date,vegetation_index:q.vegetationIndex,burned_area_hectares:q.burnedArea,burn_severity:q.severity,recovery_status:q.status,source:q.source}).select('*').single();if(error)throw error;return NextResponse.json({record:data},{status:201})}catch(error){return NextResponse.json({error:error instanceof Error?error.message:'Unable to save recovery measurement.'},{status:400})}
+}
