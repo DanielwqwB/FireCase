@@ -30,3 +30,17 @@ body{font-size:16px}.app-shell>.main-area{margin-left:0}.topbar{height:64px;padd
 /* Reserve a separate icon column so larger metric text never sits under an icon. */
 .card.metric,.role-workspace .card.metric{position:relative;padding:16px 18px 14px 72px;min-height:110px}.card.metric .metric-icon{position:absolute;left:18px;top:26px;width:38px;height:38px}.card.metric .metric-top{min-height:21px;font-size:14px;line-height:1.5}.card.metric>strong{display:block;line-height:1.25;font-size:30px;margin:4px 0}.card.metric .metric-foot{margin:4px 0 0}.card.metric .metric-foot b{font-size:12px;line-height:1.5}
 @media(max-width:780px){.card.metric,.role-workspace .card.metric{padding:14px 12px 12px 54px;min-height:110px}.card.metric .metric-icon{left:12px;top:24px;width:30px;height:30px}.card.metric .metric-top{font-size:13px}.card.metric>strong{font-size:26px}.card.metric .metric-foot b{font-size:12px}}
+
+/* Quiet map controls keep incident locations readable over either basemap. */
+.map-view-controls{position:absolute;top:12px;left:12px;z-index:500;display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100% - 76px)}
+.map-style-switch{display:flex;padding:3px;background:#fffdf9;border:1px solid #e5dccf;border-radius:9px;box-shadow:0 2px 8px #35291b14}
+.map-view-controls button{min-height:34px;padding:6px 12px;border:0;border-radius:6px;background:transparent;color:#6f6256;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.map-style-switch button[aria-pressed=true]{background:#f2e5d6;color:#8c431d}
+.map-view-controls .map-recenter{background:#fffdf9;border:1px solid #e5dccf;border-radius:9px;box-shadow:0 2px 8px #35291b14}
+.map-view-controls button:hover{background:#f5eadc;color:#8c431d}
+.map-view-controls button:focus-visible{outline:2px solid #a65022;outline-offset:2px}
+.leaflet-wrap .leaflet-caption{display:flex;align-items:center;gap:7px;left:12px;bottom:26px;padding:8px 11px;background:#fffdf9f2;border:1px solid #e5dccf;border-radius:7px;color:#655344;font-size:11px;box-shadow:0 2px 8px #35291b14;pointer-events:none}
+.map-record-dot{width:7px;height:7px;border-radius:50%;background:#ce652c}
+.leaflet-wrap .leaflet-control-zoom{border:1px solid #e5dccf;box-shadow:0 2px 8px #35291b14;border-radius:8px;overflow:hidden}
+.leaflet-wrap .leaflet-control-zoom a{background:#fffdf9;color:#655344}
+.leaflet-wrap .leaflet-control-attribution{font-size:9px;background:#fffdf9e6;color:#756b60}
