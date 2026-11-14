@@ -8,3 +8,5 @@ tsconfig.tsbuildinfo
 .next-production/
 
 .next-firecase-check/
+.next-dev/
+.next-dev-*/
