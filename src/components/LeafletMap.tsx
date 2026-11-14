@@ -7,11 +7,19 @@ import type {GeoJsonObject} from 'geojson';
 import type {WildfireCase} from '@/lib/types';
 
 const mapboxToken=process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+// Keep the operational map focused on Region V (Bicol) and prevent stray
+// coordinates from pulling its viewport to another part of the country.
+const BICOL_BOUNDS={south:11.3,north:14.5,west:122.3,east:126.1};
+const BICOL_CENTER:[number,number]=[13.1,124.1];
+
+function isInBicol(latitude:number,longitude:number){
+ return Number.isFinite(latitude)&&Number.isFinite(longitude)&&latitude>=BICOL_BOUNDS.south&&latitude<=BICOL_BOUNDS.north&&longitude>=BICOL_BOUNDS.west&&longitude<=BICOL_BOUNDS.east;
+}
 
 export default function LeafletMap({cases,onPick,hotspots=[],boundaries=[]}:{cases:WildfireCase[];onPick?:(c:WildfireCase)=>void;hotspots?:ResearchHotspot[];boundaries?:unknown[]}){
  const [tileError,setTileError]=useState(false);
  return <div className="leaflet-wrap">
-  <MapContainer center={hotspots.length?[13.1,123.5]:[12.9,122.8]} zoom={hotspots.length?7:5} scrollWheelZoom={false} zoomControl={false} className="leaflet-map">
+  <MapContainer center={BICOL_CENTER} zoom={8} scrollWheelZoom={false} zoomControl={false} className="leaflet-map">
    <MapViewport cases={cases} hotspots={hotspots} boundaries={boundaries}/>
    {boundaries.map(boundary=><GeoJSON key={JSON.stringify(boundary)} data={boundary as GeoJsonObject} style={{color:'#d77a33',weight:2,fillOpacity:.08}}/>)}
    <ZoomControl position="topright"/>
@@ -29,9 +37,10 @@ function MapViewport({cases,hotspots,boundaries}:{cases:WildfireCase[];hotspots:
  const map=useMap();
  useEffect(()=>{
   const bounds=latLngBounds([]);
-  for(const point of [...cases,...hotspots])if(Number.isFinite(point.latitude)&&Number.isFinite(point.longitude))bounds.extend([point.latitude,point.longitude]);
-  for(const boundary of boundaries){try{bounds.extend(leafletGeoJSON(boundary as GeoJsonObject).getBounds())}catch{/* Invalid boundaries are excluded from viewport fitting. */}}
-  if(bounds.isValid())map.fitBounds(bounds,{padding:[28,28],maxZoom:12,animate:false});
+  for(const point of [...cases,...hotspots])if(isInBicol(point.latitude,point.longitude))bounds.extend([point.latitude,point.longitude]);
+  for(const boundary of boundaries){try{const boundaryBounds=leafletGeoJSON(boundary as GeoJsonObject).getBounds();const center=boundaryBounds.getCenter();if(isInBicol(center.lat,center.lng))bounds.extend(boundaryBounds)}catch{/* Invalid boundaries are excluded from viewport fitting. */}}
+  if(bounds.isValid())map.fitBounds(bounds,{padding:[28,28],maxZoom:10,animate:false});
+  else map.setView(BICOL_CENTER,8,{animate:false});
   const observer=new ResizeObserver(()=>map.invalidateSize());observer.observe(map.getContainer());return()=>observer.disconnect();
  },[map,cases,hotspots,boundaries]);return null;
 }
