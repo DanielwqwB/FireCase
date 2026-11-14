@@ -17,6 +17,7 @@ erDiagram
   wildfire_cases ||--o{ fire_warnings : warns
   wildfire_cases ||--o{ recovery_records : recovers
   profiles ||--o{ audit_logs : performs
+  profiles ||--o{ fire_predictions : submits
   profiles { uuid id PK; text email; text full_name; app_role role; account_status account_status }
   monitoring_areas { uuid area_id PK; text area_name; geography boundary; boolean is_active }
   area_assignments { uuid area_id FK; uuid user_id FK; uuid assigned_by FK }
@@ -27,7 +28,10 @@ erDiagram
   case_status_history { uuid history_id PK; uuid case_id FK; uuid changed_by FK }
   fire_warnings { uuid warning_id PK; uuid case_id FK; uuid created_by FK; warning_status warning_status }
   recovery_records { uuid recovery_id PK; uuid case_id FK; date observation_date; numeric vegetation_index }
-  audit_logs { uuid audit_id PK; uuid actor_id FK; text action; jsonb old_data; jsonb new_data }
+  audit_logs { uuid log_id PK; uuid actor_id FK; text action; jsonb metadata }
+  fire_predictions { uuid prediction_id PK; uuid submitted_by FK; text model_name; jsonb observation_data; jsonb prediction_result; text prediction_status }
 ```
 
 `field-reports` is a private Storage bucket. Photos are accessible through short-lived signed URLs after the caller's report access is checked. Audit logs and satellite observations are read-only to authenticated application clients; privileged ingestion should use a trusted server-side worker.
+
+Prediction inputs and outputs from the documented FireCase inference API are stored in `public.fire_predictions`. A pending row is inserted before the external model call, then marked succeeded with its output or failed with the error. Select access is limited by RLS to the submitting user and Admins; write access is only through the authenticated server route.

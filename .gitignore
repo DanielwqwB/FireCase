@@ -6,3 +6,5 @@ tsconfig.tsbuildinfo
 
 !.env.example
 .next-production/
+
+.next-firecase-check/

@@ -1,12 +1,12 @@
 'use client';
-import {Flame,MapPin,Clock3,ArrowUpRight,ChevronRight,Map,Activity,Users,ShieldCheck,AlertTriangle,Leaf,Gauge,ClipboardList,Search,RefreshCw,Satellite,Settings2,Eye,Layers3,FileText} from 'lucide-react';
+import {Flame,MapPin,Clock3,ArrowUpRight,ChevronRight,Map,Activity,Users,ShieldCheck,AlertTriangle,Leaf,Gauge,ClipboardList,Search,RefreshCw,Satellite,Settings2,Eye,Layers3,FileText,BrainCircuit} from 'lucide-react';
 import {ResponsiveContainer,AreaChart,Area as RArea,XAxis,YAxis,Tooltip,CartesianGrid} from 'recharts';
 import dynamic from 'next/dynamic';
 const LeafletMap=dynamic(()=>import('./LeafletMap'),{ssr:false,loading:()=> <div className="map-loading">Loading map…</div>});
 import type {Role,WildfireCase,User} from '@/lib/types';
 export const nav:Record<Role,{group:string;items:{id:string;label:string;icon:any}[]}>= {
-'Admin':{group:'Administration',items:[['overview','Overview',Gauge],['cases','Case summaries',Flame],['users','User management',Users],['areas','Monitoring areas',Map],['system','System activity',Settings2]].map(([id,label,icon]:any)=>({id,label,icon}))},
-'Emergency Responder':{group:'Operations',items:[['overview','Overview',Gauge],['cases','Case queue',Flame],['map','Fire monitoring map',Map],['warnings','Warnings',AlertTriangle]].map(([id,label,icon]:any)=>({id,label,icon}))},
+'Admin':{group:'Administration',items:[['overview','Overview',Gauge],['cases','Case summaries',Flame],['users','User management',Users],['areas','Monitoring areas',Map],['system','System activity',Settings2],['predictions','Fire predictions',BrainCircuit]].map(([id,label,icon]:any)=>({id,label,icon}))},
+'Emergency Responder':{group:'Operations',items:[['overview','Overview',Gauge],['cases','Case queue',Flame],['map','Fire monitoring map',Map],['warnings','Warnings',AlertTriangle],['predictions','Fire predictions',BrainCircuit]].map(([id,label,icon]:any)=>({id,label,icon}))},
 'Firefighter':{group:'Field operations',items:[['overview','Overview',Gauge],['cases','Active cases',Flame],['reports','Field reports',ClipboardList]].map(([id,label,icon]:any)=>({id,label,icon}))},
 'Land Manager':{group:'Land & recovery',items:[['overview','Overview',Gauge],['areas','My areas',Map],['calendar','Burning calendar',Layers3],['recovery','Recovery monitoring',Leaf]].map(([id,label,icon]:any)=>({id,label,icon}))}};
 export type ActivityPoint={month:string;count:number};
