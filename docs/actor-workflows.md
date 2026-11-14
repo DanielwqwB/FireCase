@@ -46,3 +46,9 @@ npm.cmd exec --yes --package=playwright -- node tests/role-workspaces.browser.cj
 ```
 
 Set `FIRECASE_TEST_URL` to use another server address. Browser checks cover the actor layouts, report-count handoff, reviewed demo alert, spread/wind, calendar/rain panel, narrow viewport, offline reload and local report submission. Review screenshots are written to ignored `artifacts/`.
+
+## Populating signed-in dashboards
+
+`node scripts/seed-demo-data.cjs` previews a synthetic Supabase dataset using the server credentials in the ignored local `.env`. It requires `FIRECASE_DEMO_MODE=true`. Add `--apply` to insert it. This is additive: stable UUIDs and ignore-on-conflict preserve all existing rows, including edits made to earlier sample cases. Existing auth users are reused; no accounts, invitations or emails are created. Every active land manager receives assignments to the three sample areas. Historical NASA detections are left unchanged; synthetic detections use `source=other` and `source_metadata.synthetic=true`.
+
+Sample cases use `DEMO-ACTIVE-*` / `DEMO-HIST-*` references, areas use `[DEMO]` names, and reports, warnings and recovery observations explicitly say synthetic/demo. Warning rows are drafts and are never automatically sent. This fills the real authenticated case/report/calendar/recovery workflows, separately from the isolated `/demo` preview. It does not manufacture stored AI predictions. Running it against the shared project makes the sample records available to the deployed frontend immediately; refresh the app. Land management initially selects an area containing case records.
