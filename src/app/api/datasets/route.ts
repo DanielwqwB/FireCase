@@ -27,6 +27,8 @@ export async function GET(request:NextRequest){
   }
   const [manifest,hotspots]=await Promise.all([read<ResearchSummary>('manifest.json'),read<{external_detection_reference:string;detection_time:string;instrument_name:string;satellite_name:string;fire_radiative_power:number|null;source_metadata:{raw:{latitude:string;longitude:string}}}[]>('bicol-hotspots.json')]);
   const {region,weather,model_observations,other_sources}=manifest;
-  return NextResponse.json({region,weather,model_observations,other_sources,hotspots:manifest.hotspots,sampleHotspots:hotspots.slice(-500).reverse().map(row=>({id:row.external_detection_reference,latitude:Number(row.source_metadata.raw.latitude),longitude:Number(row.source_metadata.raw.longitude),observedAt:row.detection_time,sensor:row.instrument_name,satellite:row.satellite_name,frp:row.fire_radiative_power}))});
+  const months=new Map<string,number>();for(const row of hotspots){const month=row.detection_time.slice(0,7);months.set(month,(months.get(month)||0)+1)}
+  const hotspotActivity=Array.from(months,([month,count])=>({month,count})).sort((a,b)=>a.month.localeCompare(b.month));
+  return NextResponse.json({region,weather,model_observations,other_sources,hotspotActivity,hotspots:manifest.hotspots,sampleHotspots:hotspots.slice(-500).reverse().map(row=>({id:row.external_detection_reference,latitude:Number(row.source_metadata.raw.latitude),longitude:Number(row.source_metadata.raw.longitude),observedAt:row.detection_time,sensor:row.instrument_name,satellite:row.satellite_name,frp:row.fire_radiative_power}))});
  }catch(error){return NextResponse.json({error:error instanceof Error?error.message:'Unable to read stored datasets.'},{status:503})}
 }
