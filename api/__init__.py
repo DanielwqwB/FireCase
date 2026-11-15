@@ -1,1 +1,0 @@
-"""FireCase prediction API."""

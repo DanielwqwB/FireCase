@@ -1,0 +1,2 @@
+export type ResearchHotspot={id:string;latitude:number;longitude:number;observedAt:string;sensor:string;satellite:string;frp:number|null};
+export type ResearchSummary={hotspotActivity?:{month:string;count:number}[];region:string;hotspots:{count:number;from:string;to:string;counts_by_sensor:Record<string,number>};weather:{count:number;from:string;to:string;spatial_scope:string};model_observations:{count:number;from:string;to:string;scope:string;notes:string};other_sources:{gpm_nc4_files:number;smap_nc4_files:number;burned_area:string};sampleHotspots:ResearchHotspot[]};
